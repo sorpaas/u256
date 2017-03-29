@@ -1,6 +1,9 @@
 [package]
 name = "u256"
+description = "A bare minimal U256 implementation."
 version = "0.1.0"
 authors = ["Wei Tang <hi@that.world>"]
+license = "Apache-2.0"
+repository = "https://github.com/sorpaas/u256"
 
 [dependencies]
