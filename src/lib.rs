@@ -18,9 +18,7 @@
 //! The functions here are designed to be fast.
 //!
 
-#[no_std]
-
-extern crate core;
+#![no_std]
 
 use core::convert::{From, Into};
 use core::ops::{Add, Sub, Not, Mul, Div, Shr, Shl};
