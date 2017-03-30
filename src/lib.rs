@@ -126,17 +126,17 @@ impl Add for U256 {
     fn add(self, other: U256) -> U256 {
         let U256(ref me) = self;
         let U256(ref you) = other;
+
         let mut ret = [0u64; 4];
-        let mut carry = [0u64; 4];
-        let mut b_carry = false;
+        let mut carry = false;
         for i in 0..4 {
-            ret[i] = me[i].wrapping_add(you[i]);
-            if i < 4 - 1 && ret[i] < me[i] {
-                carry[i + 1] = 1;
-                b_carry = true;
-            }
+            let (v, o) = me[i].overflowing_add(you[i]);
+            ret[i] = v + (if carry { 1 } else { 0 });
+            carry = o;
         }
-        if b_carry { U256(ret) + U256(carry) } else { U256(ret) }
+
+        assert!(carry == false);
+        U256(ret)
     }
 }
 
@@ -262,7 +262,14 @@ impl Shr<usize> for U256 {
 
 #[cfg(test)]
 mod tests {
+    use U256;
+
     #[test]
-    fn it_works() {
+    fn u256_add() {
+        assert_eq!(
+            U256([0xffffffffffffffffu64, 0u64, 0u64, 0u64]) +
+                U256([0xffffffffffffffffu64, 0u64, 0u64, 0u64]),
+            U256([0xfffffffffffffffeu64, 1u64, 0u64, 0u64])
+        );
     }
 }
