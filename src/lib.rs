@@ -30,6 +30,23 @@ pub struct U256([u64; 4]);
 
 impl U256 {
     pub fn zero() -> U256 { U256([0; 4]) }
+    pub fn one() -> U256 { U256([1u64, 0u64, 0u64, 0u64]) }
+
+    pub fn overflowing_add(self, other: U256) -> (U256, bool) {
+        let U256(ref me) = self;
+        let U256(ref you) = other;
+
+        let mut ret = [0u64; 4];
+        let mut carry = false;
+        for i in 0..4 {
+            let (v, o1) = me[i].overflowing_add(you[i]);
+            let (v, o2) = v.overflowing_add(if carry { 1 } else { 0 });
+            ret[i] = v;
+            carry = o1 || o2;
+        }
+
+        (U256(ret), carry)
+    }
 
     pub fn low_u32(&self) -> u32 {
         let &U256(ref arr) = self;
@@ -124,19 +141,9 @@ impl Add for U256 {
     type Output = U256;
 
     fn add(self, other: U256) -> U256 {
-        let U256(ref me) = self;
-        let U256(ref you) = other;
-
-        let mut ret = [0u64; 4];
-        let mut carry = false;
-        for i in 0..4 {
-            let (v, o) = me[i].overflowing_add(you[i]);
-            ret[i] = v + (if carry { 1 } else { 0 });
-            carry = o;
-        }
-
-        assert!(carry == false);
-        U256(ret)
+        let (o, v) = self.overflowing_add(other);
+        assert!(v == false);
+        o
     }
 }
 
@@ -145,7 +152,9 @@ impl Sub for U256 {
 
     #[inline]
     fn sub(self, other: U256) -> U256 {
-        self + !other
+        let (o, v) = self.overflowing_add(!other);
+        assert!(v == true);
+        o + U256::one()
     }
 }
 
@@ -270,6 +279,15 @@ mod tests {
             U256([0xffffffffffffffffu64, 0u64, 0u64, 0u64]) +
                 U256([0xffffffffffffffffu64, 0u64, 0u64, 0u64]),
             U256([0xfffffffffffffffeu64, 1u64, 0u64, 0u64])
+        );
+    }
+
+    #[test]
+    fn u256_sub() {
+        assert_eq!(
+            U256([0xfffffffffffffffeu64, 1u64, 0u64, 0u64]) -
+                U256([0xffffffffffffffffu64, 0u64, 0u64, 0u64]),
+            U256([0xffffffffffffffffu64, 0u64, 0u64, 0u64])
         );
     }
 }
